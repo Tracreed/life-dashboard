@@ -1,14 +1,29 @@
-# List the start up tasks. Learn more: https://www.gitpod.io/docs/configure/workspaces/tasks
 tasks:
-  - name: set rustup nightly
-    init: rustup toolchain install nightly # runs during prebuild => https://www.gitpod.io/docs/configure/projects/prebuilds
-    command: rustup default nightly
+  - name: Set up Rust (Nightly)
+    init: |
+      rustup toolchain install nightly
+      rustup default nightly
+      rustup target add wasm32-unknown-unknown --toolchain nightly
+      cargo install cargo-leptos
+    command: echo "Rust (nightly) and Leptos are ready!"
 
-# List the ports to expose. Learn more: https://www.gitpod.io/docs/configure/workspaces/ports
+  - name: Set up Node.js and Tailwind CSS
+    init: |
+      yarn install
+    command: echo "Node.js and Tailwind CSS are ready!"
+
+  - name: Build and start Leptos dev server
+    command: |
+      cargo leptos watch
+
 ports:
-  - name: Frontend
-    description: Port 3000 for the frontend
-    port: 3000
-    onOpen: open-preview
+  - port: 3000
+    onOpen: open-browser
+  - port: 3001 # Leptos SSR server (if applicable)
+    onOpen: open-browser
 
-# Learn more from ready-to-use templates: https://www.gitpod.io/docs/introduction/getting-started/quickstart
+vscode:
+  extensions:
+    - rust-lang.rust-analyzer # Rust language support
+    - bradlc.vscode-tailwindcss # Tailwind CSS IntelliSense
+    - usernamehw.errorlens # Highlight errors in code
