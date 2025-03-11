@@ -1,8 +1,6 @@
 tasks:
   - name: Set up Rust (Nightly)
     init: |
-      rustup toolchain install nightly
-      rustup default nightly
       rustup target add wasm32-unknown-unknown --toolchain nightly
       cargo install cargo-leptos
     command: echo "Rust (nightly) and Leptos are ready!"
