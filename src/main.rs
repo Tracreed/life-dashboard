@@ -1,24 +1,36 @@
-use axum::Router;
 use leptos::*;
 use leptos_router::*;
-use shuttle_runtime::SecretStore;
-use sqlx::PgPool;
+use dotenvy::dotenv;
 
 mod components;
-mod email;
-mod routes;
+mod services;
+mod utils;
+mod models;
 
-#[shuttle_runtime::main]
-async fn main(
-    #[shuttle_shared_db::Postgres] pool: PgPool,
-    #[shuttle_runtime::SecretStore] secrets: SecretStore,
-) -> shuttle_axum::Service {
-    // Initialize routes and database
-    let pool = pool.clone();
-    
-    let app = Router::new()
-        .route("/vacation-request", axum::routing::post(routes::submit_vacation_request))
-        .with_state(AppState { pool, secrets });
+#[component]
+fn App() -> impl IntoView {
+    view! {
+        <Router>
+            <main class="container mx-auto">
+                <Routes>
+                    <Route 
+                        path="/vacation" 
+                        view=|| view! { <components::vacation_request::VacationRequestForm/> }
+                    />
+                    // Other routes...
+                </Routes>
+            </main>
+        </Router>
+    }
+}
 
-    Ok(app.into())
+fn main() {
+    // Load environment variables
+    dotenv().ok();
+
+    // Configure logging
+    tracing_subscriber::fmt::init();
+
+    // Mount the application
+    mount_to_body(|| view! { <App/> })
 }

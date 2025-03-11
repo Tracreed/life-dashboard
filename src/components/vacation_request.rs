@@ -1,30 +1,49 @@
 use leptos::*;
 use leptos_router::*;
-use chrono::NaiveDate;
+use crate::services::database::VacationRequestService;
+use crate::services::email::EmailService;
+use crate::utils::config::SmtpConfig;
 
 #[component]
 pub fn VacationRequestForm() -> impl IntoView {
-    // State management using Leptos signals
-    let (start_date, set_start_date) = create_signal(NaiveDate::from_ymd_opt(2024, 1, 1).unwrap());
-    let (end_date, set_end_date) = create_signal(NaiveDate::from_ymd_opt(2024, 1, 7).unwrap());
-    let (error, set_error) = create_signal(String::new());
-    let (success, set_success) = create_signal(false);
+    let (start_date, set_start_date) = create_signal(String::new());
+    let (end_date, set_end_date) = create_signal(String::new());
+    let (error, set_error) = create_signal(Option::<String>::None);
 
-    // Action for form submission (Leptos innovation!)
-    let submit_vacation_request = create_action(move |&()| async move {
-        let request = crate::routes::VacationRequest {
-            start_date: start_date.get(),
-            end_date: end_date.get(),
-        };
+    let submit_vacation = create_action(move |_| async move {
+        let start = start_date.get();
+        let end = end_date.get();
 
-        match leptos_axum::post("/vacation-request", request).await {
+        // Validate dates
+        if start.is_empty() || end.is_empty() {
+            set_error.set(Some("Please select both start and end dates".to_string()));
+            return;
+        }
+
+        // In a real app, you'd inject these dependencies
+        let db_service = VacationRequestService::new();
+        let email_service = EmailService::new(SmtpConfig::load().unwrap());
+
+        match db_service.create_request(&start, &end).await {
             Ok(_) => {
-                set_success.set(true);
-                set_error.set(String::new());
-            }
+                // Send email (in real scenario, get boss name from config)
+                if let Err(e) = email_service.send_vacation_request(
+                    "John Doe", // Replace with actual boss name
+                    "Employee Name", // Replace with actual employee name
+                    &start, 
+                    &end
+                ) {
+                    set_error.set(Some(format!("Email send failed: {}", e)));
+                    return;
+                }
+
+                // Reset form or redirect
+                set_start_date.set(String::new());
+                set_end_date.set(String::new());
+                set_error.set(None);
+            },
             Err(e) => {
-                set_error.set(format!("Submission failed: {}", e));
-                set_success.set(false);
+                set_error.set(Some(format!("Submission failed: {}", e)));
             }
         }
     });
@@ -35,7 +54,7 @@ pub fn VacationRequestForm() -> impl IntoView {
                 <h2 class="card-title">Vacation Request</h2>
                 <form on:submit=move |ev| {
                     ev.prevent_default();
-                    submit_vacation_request.dispatch(());
+                    submit_vacation.dispatch(());
                 }>
                     <div class="form-control">
                         <label class="label">
@@ -43,48 +62,47 @@ pub fn VacationRequestForm() -> impl IntoView {
                         </label>
                         <input 
                             type="date" 
-                            class="input input-bordered" 
-                            prop:value=move || start_date.get().to_string()
-                            on:change=move |ev| {
-                                if let Ok(date) = NaiveDate::parse_from_str(&ev.target().value(), "%Y-%m-%d") {
-                                    set_start_date.set(date);
-                                }
+                            prop:value=start_date 
+                            on:input=move |ev| {
+                                set_start_date.set(event_target_value(&ev));
                             }
+                            class="input input-bordered"
                         />
                     </div>
+
                     <div class="form-control">
                         <label class="label">
                             <span class="label-text">End Date</span>
                         </label>
                         <input 
                             type="date" 
-                            class="input input-bordered" 
-                            prop:value=move || end_date.get().to_string()
-                            on:change=move |ev| {
-                                if let Ok(date) = NaiveDate::parse_from_str(&ev.target().value(), "%Y-%m-%d") {
-                                    set_end_date.set(date);
-                                }
+                            prop:value=end_date 
+                            on:input=move |ev| {
+                                set_end_date.set(event_target_value(&ev));
                             }
+                            class="input input-bordered"
                         />
                     </div>
+
+                    {move || error.get().map(|e| view! {
+                        <div class="alert alert-error">
+                            {e}
+                        </div>
+                    })}
+
                     <div class="form-control mt-6">
                         <button 
                             type="submit" 
                             class="btn btn-primary"
-                            disabled=move || submit_vacation_request.pending().get()
+                            disabled=move || submit_vacation.pending().get()
                         >
-                            {move || if submit_vacation_request.pending().get() { "Submitting..." } else { "Submit Request" }}
+                            {move || if submit_vacation.pending().get() 
+                                { "Submitting..." } 
+                                else { "Submit Request" }
+                            }
                         </button>
                     </div>
                 </form>
-
-                {move || if !error.get().is_empty() {
-                    view! { <div class="alert alert-error">{error.get()}</div> }
-                } else if success.get() {
-                    view! { <div class="alert alert-success">Vacation request submitted successfully!</div> }
-                } else {
-                    view! {}
-                }}
             </div>
         </div>
     }
