@@ -5,6 +5,7 @@ tasks:
     init: |
       rustup target add wasm32-unknown-unknown --toolchain nightly
       cargo install cargo-leptos
+      gp sync-done leptos
     command: echo "Rust (nightly) and Leptos are ready!"
 
   - name: Set up Node.js and Tailwind CSS
@@ -13,6 +14,7 @@ tasks:
     command: echo "Node.js and Tailwind CSS are ready!"
 
   - name: Build and start Leptos dev server
+    init: gp sync-await leptos
     command: |
       cargo leptos watch
 
