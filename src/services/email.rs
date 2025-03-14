@@ -1,7 +1,8 @@
+use crate::utils::config::SmtpConfig;
+use anyhow::{Context, Result};
 use lettre::transport::smtp::authentication::Credentials;
 use lettre::{Message, SmtpTransport, Transport};
-use anyhow::{Result, Context};
-use crate::utils::config::SmtpConfig;
+use secrecy::ExposeSecret;
 
 pub struct EmailService {
     config: SmtpConfig,
@@ -13,11 +14,11 @@ impl EmailService {
     }
 
     pub fn send_vacation_request(
-        &self, 
-        boss_name: &str, 
-        employee_name: &str, 
-        start_date: &str, 
-        end_date: &str
+        &self,
+        boss_name: &str,
+        employee_name: &str,
+        start_date: &str,
+        end_date: &str,
     ) -> Result<()> {
         let email = Message::builder()
             .from(self.config.username.parse()?)
@@ -29,8 +30,8 @@ impl EmailService {
             ))?;
 
         let creds = Credentials::new(
-            self.config.username.clone(), 
-            self.config.password.expose_secret().clone()
+            self.config.username.clone(),
+            self.config.password.expose_secret().clone(),
         );
 
         let mailer = SmtpTransport::relay(&self.config.host)?
@@ -38,8 +39,7 @@ impl EmailService {
             .port(self.config.port)
             .build();
 
-        mailer.send(&email)
-            .context("Failed to send email")?;
+        mailer.send(&email).context("Failed to send email")?;
 
         Ok(())
     }

@@ -1,3 +1,5 @@
+image: gitpod/workspace-postgres
+
 tasks:
   - name: Set up Rust (Nightly)
     init: |
@@ -19,6 +21,9 @@ ports:
     onOpen: open-browser
   - port: 3001 # Leptos SSR server (if applicable)
     onOpen: open-browser
+  - name: database
+    port: 5432
+    onOpen: ignore
 
 vscode:
   extensions:
