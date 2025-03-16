@@ -4,7 +4,7 @@ tasks:
   - name: Set up Rust (Nightly)
     init: |
       rustup target add wasm32-unknown-unknown --toolchain nightly
-      cargo install cargo-leptos
+      rustup default nightly
       gp sync-done leptos
     command: echo "Rust (nightly) and Leptos are ready!"
 
@@ -14,7 +14,10 @@ tasks:
     command: echo "Node.js and Tailwind CSS are ready!"
 
   - name: Build and start Leptos dev server
-    init: gp sync-await leptos
+    init: |
+      gp sync-await leptos
+      cargo install sqlx-cli
+      cargo install cargo-leptos
     command: |
       cargo leptos watch
 

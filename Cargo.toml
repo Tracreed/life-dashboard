@@ -1,13 +1,19 @@
+[workspace]
+
 [package]
 name = "life-dashboard"
 version = "0.1.0"
 edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
 
 [dependencies]
 # Leptos Core
 leptos = { version = "0.6", features = ["nightly"] }
 leptos_router = { version = "0.6" }
 leptos_meta = { version = "0.6" }
+cfg-if = "1.0.0"
 
 # Database
 sqlx = { version = "0.7", features = ["runtime-tokio", "postgres", "chrono"] }
@@ -37,3 +43,6 @@ hydrate = ["leptos/hydrate"]
 lto = true
 opt-level = 3
 codegen-units = 1
+
+[package.metadata.leptos]
+output-name = "life-dashboard"

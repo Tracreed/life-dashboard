@@ -1325,6 +1325,7 @@ name = "life-dashboard"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "cfg-if",
  "chrono",
  "dotenvy",
  "leptos",
